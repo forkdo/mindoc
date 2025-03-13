@@ -1,19 +1,17 @@
-version: "3"
 services:
   mindoc:
     image: registry.cn-hangzhou.aliyuncs.com/mindoc-org/mindoc:v2.1
     container_name: mindoc
-    privileged: false
-    restart: always
+    restart: unless-stopped
     ports:
       - 8181:8181
     volumes:
-      - /var/www/mindoc/conf://mindoc/conf
-      - /var/www/mindoc/static://mindoc/static
-      - /var/www/mindoc/views://mindoc/views
-      - /var/www/mindoc/uploads://mindoc/uploads
-      - /var/www/mindoc/runtime://mindoc/runtime
-      - /var/www/mindoc/database://mindoc/database
+      - ./mindoc/conf:/mindoc/conf
+      - ./mindoc/static:/mindoc/static
+      - ./mindoc/views:/mindoc/views
+      - ./mindoc/uploads:/mindoc/uploads
+      - ./mindoc/runtime:/mindoc/runtime
+      - ./mindoc/database:/mindoc/database
     environment:
       - MINDOC_RUN_MODE=prod
       - MINDOC_DB_ADAPTER=sqlite3
@@ -25,6 +23,3 @@ services:
       - MINDOC_CDN_IMG_URL=
       - MINDOC_CDN_CSS_URL=
       - MINDOC_CDN_JS_URL=
-    dns:
-      - 223.5.5.5
-      - 223.6.6.6

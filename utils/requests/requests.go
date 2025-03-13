@@ -1,15 +1,15 @@
 package requests
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"os"
-	"fmt"
 )
 
-//下载远程文件并保存到指定位置
-func DownloadAndSaveFile(remoteUrl, dstFile string) (error) {
+// 下载远程文件并保存到指定位置
+func DownloadAndSaveFile(remoteUrl, dstFile string) error {
 	client := &http.Client{}
 	uri, err := url.Parse(remoteUrl)
 	if err != nil {
@@ -17,7 +17,7 @@ func DownloadAndSaveFile(remoteUrl, dstFile string) (error) {
 	}
 	// Create the file
 	out, err := os.Create(dstFile)
-	if err != nil  {
+	if err != nil {
 		return err
 	}
 	defer out.Close()
@@ -34,10 +34,9 @@ func DownloadAndSaveFile(remoteUrl, dstFile string) (error) {
 	}
 	defer resp.Body.Close()
 
-
 	if resp.StatusCode == http.StatusOK {
 		_, err = io.Copy(out, resp.Body)
-	}else{
+	} else {
 		return fmt.Errorf("bad status: %s", resp.Status)
 	}
 	return nil

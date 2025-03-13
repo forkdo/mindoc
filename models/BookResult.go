@@ -355,8 +355,8 @@ func (m *BookResult) Converter(sessionId string) (ConvertBookResult, error) {
 		Cover:        m.Cover,
 		Timestamp:    time.Now().Format("2006-01-02 15:04:05"),
 		Description:  string(blackfriday.Run([]byte(m.Description))),
-		Footer:       "<p style='color:#8E8E8E;font-size:12px;'>本文档使用 <a href='https://www.iminho.me' style='text-decoration:none;color:#1abc9c;font-weight:bold;'>MinDoc</a> 构建 <span style='float:right'>- _PAGENUM_ -</span></p>",
-		Header:       "<p style='color:#8E8E8E;font-size:12px;'>_SECTION_</p>",
+		Footer:       "\"<p style='color:#8E8E8E;font-size:12px;'>本文档使用 <a href='https://mindoc.com.cn' style='text-decoration:none;color:#1abc9c;font-weight:bold;'>MinDoc</a> 构建 <span style='float:right'>- _PAGENUM_ -</span></p>\"",
+		Header:       "\"<p style='color:#8E8E8E;font-size:12px;'>_SECTION_</p>\"",
 		Identifier:   "",
 		Language:     "zh-CN",
 		Creator:      m.CreateName,
@@ -375,10 +375,10 @@ func (m *BookResult) Converter(sessionId string) (ConvertBookResult, error) {
 	}
 
 	if m.Publisher != "" {
-		ebookConfig.Footer = "<p style='color:#8E8E8E;font-size:12px;'>本文档由 <span style='text-decoration:none;color:#1abc9c;font-weight:bold;'>" + m.Publisher + "</span> 生成<span style='float:right'>- _PAGENUM_ -</span></p>"
+		ebookConfig.Footer = "\"<p style='color:#8E8E8E;font-size:12px;'>本文档由 <span style='text-decoration:none;color:#1abc9c;font-weight:bold;'>" + m.Publisher + "</span> 生成<span style='float:right'>- _PAGENUM_ -</span></p>\""
 	} else if web.AppConfig.DefaultString("publisher_def", "") != "" {
 		defPub := web.AppConfig.DefaultString("publisher_def", "")
-		ebookConfig.Footer = "<p style='color:#8E8E8E;font-size:12px;'>本文档由 <span style='text-decoration:none;color:#1abc9c;font-weight:bold;'>" + defPub + "</span> 生成<span style='float:right'>- _PAGENUM_ -</span></p>"
+		ebookConfig.Footer = "\"<p style='color:#8E8E8E;font-size:12px;'>本文档由 <span style='text-decoration:none;color:#1abc9c;font-weight:bold;'>" + defPub + "</span> 生成<span style='float:right'>- _PAGENUM_ -</span></p>\""
 	}
 	if m.RealName != "" {
 		ebookConfig.Creator = m.RealName
@@ -402,7 +402,7 @@ func (m *BookResult) Converter(sessionId string) (ConvertBookResult, error) {
 		if err := web.ExecuteViewPathTemplate(&buf, "document/export.tpl", viewPath, map[string]interface{}{"Model": m, "Lists": item, "BaseUrl": conf.BaseUrl}); err != nil {
 			return convertBookResult, err
 		}
-		html := buf.String()
+		var html = buf.String()
 
 		if err != nil {
 

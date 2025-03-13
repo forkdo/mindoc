@@ -210,7 +210,7 @@ func (c *SMTPClient) Send(m Mail) error {
 	return smtp.SendMail(c.host+":"+c.port, c.smtpAuth, m.From, m.To, message.Bytes())
 }
 
-//SendTLS 通过TLS发送
+// SendTLS 通过TLS发送
 func (c *SMTPClient) SendTLS(m Mail, message bytes.Buffer) error {
 
 	var ct *smtp.Client

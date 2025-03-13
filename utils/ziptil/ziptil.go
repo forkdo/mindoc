@@ -9,10 +9,10 @@ import (
 	"strings"
 )
 
-//解压zip文件
-//@param			zipFile			需要解压的zip文件
-//@param			dest			需要解压到的目录
-//@return			err				返回错误
+// 解压zip文件
+// @param			zipFile			需要解压的zip文件
+// @param			dest			需要解压到的目录
+// @return			err				返回错误
 func Unzip(zipFile, dest string) (err error) {
 	dest = strings.TrimSuffix(dest, "/") + "/" // Make sure suffix with "/".
 	// 打开一个zip格式文件
@@ -60,7 +60,7 @@ func Unzip(zipFile, dest string) (err error) {
 	return nil
 }
 
-//压缩文件
+// 压缩文件
 func Zip(source, target string) error {
 	zipFile, err := os.Create(target)
 	if err != nil {

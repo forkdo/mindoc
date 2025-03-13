@@ -5,7 +5,7 @@ import (
 	"image"
 	"os"
 
-	"github.com/nfnt/resize"
+	"github.com/rymdport/resize"
 )
 
 func ImageCopy(src image.Image, x, y, w, h int) (image.Image, error) {

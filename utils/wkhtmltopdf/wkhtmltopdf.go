@@ -71,7 +71,7 @@ func (pr *PageReader) Args() []string {
 	return pr.PageOptions.Args()
 }
 
-//Reader returns the io.Reader and is part of the page interface
+// Reader returns the io.Reader and is part of the page interface
 func (pr *PageReader) Reader() io.Reader {
 	return pr.Input
 }
@@ -140,7 +140,7 @@ type PDFGenerator struct {
 	pages   []page
 }
 
-//Args returns the commandline arguments as a string slice
+// Args returns the commandline arguments as a string slice
 func (pdfg *PDFGenerator) Args() []string {
 	args := []string{}
 	args = append(args, pdfg.globalOptions.Args()...)
@@ -200,12 +200,12 @@ func (pdfg *PDFGenerator) WriteFile(filename string) error {
 	return ioutil.WriteFile(filename, pdfg.Bytes(), 0666)
 }
 
-//findPath finds the path to wkhtmltopdf by
-//- first looking in the current dir
-//- looking in the PATH and PATHEXT environment dirs
-//- using the WKHTMLTOPDF_PATH environment dir
-//The path is cached, meaning you can not change the location of wkhtmltopdf in
-//a running program once it has been found
+// findPath finds the path to wkhtmltopdf by
+// - first looking in the current dir
+// - looking in the PATH and PATHEXT environment dirs
+// - using the WKHTMLTOPDF_PATH environment dir
+// The path is cached, meaning you can not change the location of wkhtmltopdf in
+// a running program once it has been found
 func (pdfg *PDFGenerator) findPath() error {
 	const exe = "wkhtmltopdf"
 	if binPath != "" {

@@ -5,7 +5,7 @@ import (
 	"reflect"
 )
 
-//A list of options that can be set from code to make it easier to see which options are available
+// A list of options that can be set from code to make it easier to see which options are available
 type globalOptions struct {
 	CookieJar         stringOption //Read and write cookies from and to the supplied cookie jar file
 	Copies            uintOption   //Number of copies to print into the pdf file (default 1)
@@ -336,17 +336,17 @@ func newPageOptions() pageOptions {
 		PostFile:                  mapOption{option: "post-file"},
 		PrintMediaType:            boolOption{option: "print-media-type"},
 		Proxy:                     stringOption{option: "proxy"},
-		RadiobuttonCheckedSvg: stringOption{option: "radiobutton-checked-svg"},
-		RadiobuttonSvg:        stringOption{option: "radiobutton-svg"},
-		RunScript:             sliceOption{option: "run-script"},
-		DisableSmartShrinking: boolOption{option: "disable-smart-shrinking"},
-		NoStopSlowScripts:     boolOption{option: "no-stop-slow-scripts"},
-		EnableTocBackLinks:    boolOption{option: "enable-toc-back-links"},
-		UserStyleSheet:        stringOption{option: "user-style-sheet"},
-		Username:              stringOption{option: "username"},
-		ViewportSize:          stringOption{option: "viewport-size"},
-		WindowStatus:          stringOption{option: "window-status"},
-		Zoom:                  floatOption{option: "zoom"},
+		RadiobuttonCheckedSvg:     stringOption{option: "radiobutton-checked-svg"},
+		RadiobuttonSvg:            stringOption{option: "radiobutton-svg"},
+		RunScript:                 sliceOption{option: "run-script"},
+		DisableSmartShrinking:     boolOption{option: "disable-smart-shrinking"},
+		NoStopSlowScripts:         boolOption{option: "no-stop-slow-scripts"},
+		EnableTocBackLinks:        boolOption{option: "enable-toc-back-links"},
+		UserStyleSheet:            stringOption{option: "user-style-sheet"},
+		Username:                  stringOption{option: "username"},
+		ViewportSize:              stringOption{option: "viewport-size"},
+		WindowStatus:              stringOption{option: "window-status"},
+		Zoom:                      floatOption{option: "zoom"},
 	}
 }
 

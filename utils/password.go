@@ -20,7 +20,7 @@ const (
 	salt_local_secret   = "ahfw*&TGdsfnbi*^Wt"
 )
 
-//加密密码
+// 加密密码
 func PasswordHash(pass string) (string, error) {
 
 	saltSecret, err := salt_secret()
@@ -46,7 +46,7 @@ func PasswordHash(pass string) (string, error) {
 
 }
 
-//校验密码是否有效
+// 校验密码是否有效
 func PasswordVerify(hashing string, pass string) (bool, error) {
 	data := trimSaltHash(hashing)
 
@@ -99,7 +99,7 @@ func hash(pass string, salt_secret string, salt string, interation int64) (strin
 		}
 		hashPass = hex.EncodeToString(hashCenter.Sum(nil))
 	}
-	if _,err := hashOutput.Write([]byte(hashPass + salt_local_secret)); err != nil {
+	if _, err := hashOutput.Write([]byte(hashPass + salt_local_secret)); err != nil {
 		return "", err
 	}
 	hashPass = hex.EncodeToString(hashOutput.Sum(nil))

@@ -112,7 +112,7 @@ func RunMigration() {
 	}
 }
 
-//导出数据库的表结构
+// 导出数据库的表结构
 func ExportDatabaseTable() ([]string, error) {
 	dbadapter, _ := web.AppConfig.String("db_adapter")
 	dbdatabase, _ := web.AppConfig.String("db_database")

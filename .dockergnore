@@ -1,0 +1,7 @@
+.git
+.github
+.gitignore
+README.md
+
+conf/app.conf
+database/mindoc.db

@@ -34,3 +34,5 @@ database/mindoc.db
 /runtime
 /uploads/*.*
 !/uploads/.gitkeep
+# Added by goreleaser init:
+dist/

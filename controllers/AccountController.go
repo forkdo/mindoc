@@ -4,10 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/mindoc-org/mindoc/cache"
-	"github.com/mindoc-org/mindoc/utils/auth2"
-	"github.com/mindoc-org/mindoc/utils/auth2/dingtalk"
-	"github.com/mindoc-org/mindoc/utils/auth2/wecom"
 	"html/template"
 	"math/rand"
 	"net/http"
@@ -15,6 +11,11 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/mindoc-org/mindoc/cache"
+	"github.com/mindoc-org/mindoc/utils/auth2"
+	"github.com/mindoc-org/mindoc/utils/auth2/dingtalk"
+	"github.com/mindoc-org/mindoc/utils/auth2/wecom"
 
 	"github.com/beego/beego/v2/client/orm"
 	"github.com/beego/beego/v2/core/logs"
@@ -1431,20 +1432,29 @@ func (c *AccountController) Logout() {
 
 // 验证码
 func (c *AccountController) Captcha() {
-	captchaImage := gocaptcha.NewCaptchaImage(140, 40, gocaptcha.RandLightColor())
-
-	captchaImage.DrawNoise(gocaptcha.CaptchaComplexLower)
-
+	captchaImage := gocaptcha.New(140, 40, gocaptcha.RandLightColor())
 	// captchaImage.DrawTextNoise(gocaptcha.CaptchaComplexHigh)
+	// captchaImage.DrawNoise(gocaptcha.NoiseDensityHigh, gocaptcha.NewTextNoiseDrawer(0))
+
 	txt := gocaptcha.RandText(4)
 
 	c.SetSession(conf.CaptchaSessionName, txt)
 
-	captchaImage.DrawText(txt)
-	// captchaImage.Drawline(3);
+	// captchaImage.
+	// 	DrawBorder(gocaptcha.RandDeepColor()).
+	// 	DrawNoise(gocaptcha.NoiseDensityHigh, gocaptcha.NewTextNoiseDrawer(gocaptcha.DefaultDPI)).
+	// 	DrawNoise(gocaptcha.NoiseDensityLower, gocaptcha.NewPointNoiseDrawer()).
+	// 	DrawLine(gocaptcha.NewBezier3DLine(), gocaptcha.RandDeepColor()).
+	// 	DrawText(gocaptcha.NewTwistTextDrawer(gocaptcha.DefaultDPI, gocaptcha.DefaultAmplitude, gocaptcha.DefaultFrequency), gocaptcha.RandText(4)).
+	// 	DrawLine(gocaptcha.NewBeeline(), gocaptcha.RandDeepColor()).
+	// 	//DrawLine(gocaptcha.NewHollowLine(), gocaptcha.RandLightColor()).
+	// 	DrawBlur(gocaptcha.NewGaussianBlur(), gocaptcha.DefaultBlurKernelSize, gocaptcha.DefaultBlurSigma)
+
+	captchaImage.DrawText(gocaptcha.NewTextDrawer(0), txt)
 	captchaImage.DrawBorder(gocaptcha.ColorToRGB(0x17A7A7A))
+	// captchaImage.Drawline(3);
 	// captchaImage.DrawHollowLine()
 
-	captchaImage.SaveImage(c.Ctx.ResponseWriter, gocaptcha.ImageFormatJpeg)
+	captchaImage.Encode(c.Ctx.ResponseWriter, gocaptcha.ImageFormatJpeg)
 	c.StopRun()
 }

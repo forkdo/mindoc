@@ -24,7 +24,7 @@ func (c *LabelController) Prepare() {
 	}
 }
 
-//查看包含标签的文档列表.
+// 查看包含标签的文档列表.
 func (c *LabelController) Index() {
 	c.Prepare()
 	c.TplName = "label/index.tpl"

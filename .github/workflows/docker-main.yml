@@ -1,0 +1,665 @@
+name: Docker-Main
+
+on:
+  push:
+    branches:
+      - main*
+    paths:
+      - "docker/Dockerfile*"
+      - ".github/workflows/docker-main.yml"
+
+env:
+  branch: main
+  package_name: mindoc
+  acr_registry: crpi-6q2ncgoagz57loxj.cn-guangzhou.personal.cr.aliyuncs.com
+  hcr_registry: swr.ap-southeast-3.myhuaweicloud.com
+  tcr_registry: ccr.ccs.tencentyun.com
+
+jobs:
+  slim:
+    runs-on: ubuntu-latest
+    env:
+      tag: slim
+      GHCRIO_LOGIN_STATUS: failed
+      DOCKERIO_LOGIN_STATUS: failed
+      ALIYUN_LOGIN_STATUS: failed
+      HUAWEI_LOGIN_STATUS: failed
+      TENCENT_LOGIN_STATUS: failed
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Login to GitHub Container Registry (ghcr.io)
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Verify GHCR Docker Login
+        run: |
+          if ! docker info > /dev/null 2>&1; then
+            echo "ghcr.io Docker login failed!"
+            echo "GHCRIO_LOGIN_STATUS=failed" >> $GITHUB_ENV
+          else
+            echo "ghcr.io Docker login succeeded."
+            echo "GHCRIO_LOGIN_STATUS=success" >> $GITHUB_ENV
+          fi
+      - name: Generate Github Container Registry Tags
+        id: ghcr_ver
+        if: env.GHCRIO_LOGIN_STATUS == 'success'
+        env:
+          IMAGE_REPO: ghcr.io/${{ github.repository_owner }}/${{ env.package_name }}
+        run: |
+          echo "version=$IMAGE_REPO:${{ env.branch }}" >> $GITHUB_OUTPUT
+
+      - name: Check Docker Hub Credentials
+        id: check_docker_creds
+        run: |
+          if [[ -n "${{ secrets.DOCKERHUB_USERNAME }}" && -n "${{ secrets.DOCKERHUB_TOKEN }}" ]]; then
+            echo "creds_exist=true" >> $GITHUB_OUTPUT
+          else
+            echo "creds_exist=false" >> $GITHUB_OUTPUT
+          fi
+      - name: Login to Docker Hub 
+        if: steps.check_docker_creds.outputs.creds_exist == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: docker.io
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Verify Docker Login
+        if: steps.check_docker_creds.outputs.creds_exist == 'true'
+        run: |
+          if ! docker info > /dev/null 2>&1; then
+            echo "docker.io Docker login failed!"
+            echo "DOCKERIO_LOGIN_STATUS=failed" >> $GITHUB_ENV
+          else
+            echo "docker.io Docker login succeeded."
+            echo "DOCKERIO_LOGIN_STATUS=success" >> $GITHUB_ENV
+          fi      
+      - name: Generate Docker Hub Tags
+        id: docker_ver
+        if: env.DOCKERIO_LOGIN_STATUS == 'success'
+        env:
+          IMAGE_REPO: ${{ github.repository_owner }}/${{ env.package_name }}
+        run: |
+          echo "version=$IMAGE_REPO:${{ env.branch }}" >> $GITHUB_OUTPUT
+
+      - name: Check Aliyun Credentials
+        id: check_aliyun_creds
+        run: |
+          if [[ -n "${{ secrets.ALIYUN_USERNAME }}" && -n "${{ secrets.ALIYUN_TOKEN }}" ]]; then
+            echo "creds_exist=true" >> $GITHUB_OUTPUT
+          else
+            echo "creds_exist=false" >> $GITHUB_OUTPUT
+          fi
+      - name: Login to Aliyun 
+        if: steps.check_aliyun_creds.outputs.creds_exist == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.acr_registry }}
+          username: ${{ secrets.ALIYUN_USERNAME }}
+          password: ${{ secrets.ALIYUN_TOKEN }}
+      - name: Verify Aliyun Docker Login
+        if: steps.check_aliyun_creds.outputs.creds_exist == 'true'
+        run: |
+          if ! docker info > /dev/null 2>&1; then
+            echo "aliyun Docker login failed!"
+            echo "ALIYUN_LOGIN_STATUS=failed" >> $GITHUB_ENV
+          else
+            echo "aliyun Docker login succeeded."
+            echo "ALIYUN_LOGIN_STATUS=success" >> $GITHUB_ENV
+          fi             
+      - name: Generate Aliyun Container Registry Tags
+        id: acr_ver
+        if: env.ALIYUN_LOGIN_STATUS == 'success'
+        env:
+          IMAGE_REPO:  ${{ env.acr_registry }}/${{ github.repository_owner }}/${{ env.package_name }}
+        run: |
+          echo "version=$IMAGE_REPO:${{ env.branch }}" >> $GITHUB_OUTPUT
+
+      - name: 华为云无法推送
+        run: |
+          echo "华为云无法推送："
+          echo "buildx failed with: ERROR: failed to solve: failed to push xxx: failed commit on ref "index-sha256:xxx": unexpected status from PUT request to https://xxx: 400 Bad Request"
+      - name: Check Huawei Cloud Credentials
+        id: check_huawei_creds
+        run: |
+          if [[ -n "${{ secrets.HUAWEI_USERNAME }}" && -n "${{ secrets.HUAWEI_TOKEN }}" ]]; then
+            echo "creds_exist=true" >> $GITHUB_OUTPUT
+          else
+            echo "creds_exist=false" >> $GITHUB_OUTPUT
+          fi
+      - name: Login to Huawei Cloud 
+        if: steps.check_huawei_creds.outputs.creds_exist == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.hcr_registry }}
+          username: ${{ secrets.HUAWEI_USERNAME }}
+          password: ${{ secrets.HUAWEI_TOKEN }}
+      - name: Verify Huawei Docker Login
+        if: steps.check_huawei_creds.outputs.creds_exist == 'true'
+        run: |
+          if ! docker info > /dev/null 2>&1; then
+            echo "huawei Docker login failed!"
+            echo "HUAWEI_LOGIN_STATUS=failed" >> $GITHUB_ENV
+          else
+            echo "huawei Docker login succeeded."
+            echo "HUAWEI_LOGIN_STATUS=success" >> $GITHUB_ENV
+          fi              
+      - name: Generate Huawei Cloud Container Registry Tags
+        id: hcr_ver
+        if: env.HUAWEI_LOGIN_STATUS == 'success'
+        env:
+          IMAGE_REPO:  ${{ env.hcr_registry }}/${{ github.repository_owner }}/${{ env.package_name }}
+        run: |
+          echo "version=$IMAGE_REPO:${{ env.branch }}" >> $GITHUB_OUTPUT
+
+      - name: Check Tencent Cloud Credentials
+        id: check_tencent_creds
+        run: |
+          if [[ -n "${{ secrets.TENCENT_USERNAME }}" && -n "${{ secrets.TENCENT_TOKEN }}" ]]; then
+            echo "creds_exist=true" >> $GITHUB_OUTPUT
+          else
+            echo "creds_exist=false" >> $GITHUB_OUTPUT
+          fi
+      - name: Login to Tencent Cloud
+        if: steps.check_tencent_creds.outputs.creds_exist == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.tcr_registry }}
+          username: ${{ secrets.TENCENT_USERNAME }}
+          password: ${{ secrets.TENCENT_TOKEN }}
+      - name: Verify Tencent Docker Login
+        if: steps.check_tencent_creds.outputs.creds_exist == 'true'
+        run: |
+          if ! docker info > /dev/null 2>&1; then
+            echo "tencent Docker login failed!"
+            echo "TENCENT_LOGIN_STATUS=failed" >> $GITHUB_ENV
+          else
+            echo "tencent Docker login succeeded."
+            echo "TENCENT_LOGIN_STATUS=success" >> $GITHUB_ENV
+          fi            
+      - name: Generate Tencent Cloud Container Registry Tags
+        id: tcr_ver
+        if: env.TENCENT_LOGIN_STATUS == 'success'
+        env:
+          IMAGE_REPO:  ${{ env.tcr_registry }}/${{ github.repository_owner }}/${{ env.package_name }}
+        run: |
+          echo "version=$IMAGE_REPO:${{ env.branch }}" >> $GITHUB_OUTPUT
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Tags
+        id: tags
+        run: |
+            if [[ -n "${{ steps.ghcr_ver.outputs.version }}" ]]; then
+              echo "ghcr=${{ steps.ghcr_ver.outputs.version }}-${{ env.tag }}" >> $GITHUB_OUTPUT
+            fi
+            
+            if [[ -n "${{ steps.docker_ver.outputs.version }}" ]]; then
+              echo "docker=${{ steps.docker_ver.outputs.version }}-${{ env.tag }}" >> $GITHUB_OUTPUT
+            fi
+            
+            if [[ -n "${{ steps.acr_ver.outputs.version }}" ]]; then
+              echo "acr=${{ steps.acr_ver.outputs.version }}-${{ env.tag }}" >> $GITHUB_OUTPUT
+            fi
+
+            if [[ -n "${{ steps.hcr_ver.outputs.version }}" ]]; then
+              echo "hcr=${{ steps.hcr_ver.outputs.version }}-${{ env.tag }}" >> $GITHUB_OUTPUT
+            fi
+
+            if [[ -n "${{ steps.tcr_ver.outputs.version }}" ]]; then
+              echo "tcr=${{ steps.tcr_ver.outputs.version }}-${{ env.tag }}" >> $GITHUB_OUTPUT
+            fi
+      - name: Build Slim
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          context: .
+          platforms: linux/amd64
+          file: docker/Dockerfile-slim
+          tags: |
+            ${{ steps.tags.outputs.ghcr || '' }}
+            ${{ steps.tags.outputs.docker || '' }}
+            ${{ steps.tags.outputs.acr || '' }}
+            ${{ steps.tags.outputs.hcr || '' }}
+            ${{ steps.tags.outputs.tcr || '' }}
+      - uses: actions/delete-package-versions@v5
+        continue-on-error: true
+        with: 
+          package-name: ${{ env.package_name }}
+          package-type: 'container'
+          delete-only-untagged-versions: 'true'  
+
+  stable:
+    runs-on: ubuntu-latest
+    env:
+      tag: stable
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Login to GitHub Container Registry (ghcr.io)
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Verify GHCR Docker Login
+        run: |
+          if ! docker info > /dev/null 2>&1; then
+            echo "ghcr.io Docker login failed!"
+            echo "GHCRIO_LOGIN_STATUS=failed" >> $GITHUB_ENV
+          else
+            echo "ghcr.io Docker login succeeded."
+            echo "GHCRIO_LOGIN_STATUS=success" >> $GITHUB_ENV
+          fi
+      - name: Generate Github Container Registry Tags
+        id: ghcr_ver
+        if: env.GHCRIO_LOGIN_STATUS == 'success'
+        env:
+          IMAGE_REPO: ghcr.io/${{ github.repository_owner }}/${{ env.package_name }}
+        run: |
+          echo "version=$IMAGE_REPO:${{ env.branch }}" >> $GITHUB_OUTPUT
+
+      - name: Check Docker Hub Credentials
+        id: check_docker_creds
+        run: |
+          if [[ -n "${{ secrets.DOCKERHUB_USERNAME }}" && -n "${{ secrets.DOCKERHUB_TOKEN }}" ]]; then
+            echo "creds_exist=true" >> $GITHUB_OUTPUT
+          else
+            echo "creds_exist=false" >> $GITHUB_OUTPUT
+          fi
+      - name: Login to Docker Hub 
+        if: steps.check_docker_creds.outputs.creds_exist == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: docker.io
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Verify Docker Login
+        if: steps.check_docker_creds.outputs.creds_exist == 'true'
+        run: |
+          if ! docker info > /dev/null 2>&1; then
+            echo "docker.io Docker login failed!"
+            echo "DOCKERIO_LOGIN_STATUS=failed" >> $GITHUB_ENV
+          else
+            echo "docker.io Docker login succeeded."
+            echo "DOCKERIO_LOGIN_STATUS=success" >> $GITHUB_ENV
+          fi      
+      - name: Generate Docker Hub Tags
+        id: docker_ver
+        if: env.DOCKERIO_LOGIN_STATUS == 'success'
+        env:
+          IMAGE_REPO: ${{ github.repository_owner }}/${{ env.package_name }}
+        run: |
+          echo "version=$IMAGE_REPO:${{ env.branch }}" >> $GITHUB_OUTPUT
+
+      - name: Check Aliyun Credentials
+        id: check_aliyun_creds
+        run: |
+          if [[ -n "${{ secrets.ALIYUN_USERNAME }}" && -n "${{ secrets.ALIYUN_TOKEN }}" ]]; then
+            echo "creds_exist=true" >> $GITHUB_OUTPUT
+          else
+            echo "creds_exist=false" >> $GITHUB_OUTPUT
+          fi
+      - name: Login to Aliyun 
+        if: steps.check_aliyun_creds.outputs.creds_exist == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.acr_registry }}
+          username: ${{ secrets.ALIYUN_USERNAME }}
+          password: ${{ secrets.ALIYUN_TOKEN }}
+      - name: Verify Aliyun Docker Login
+        if: steps.check_aliyun_creds.outputs.creds_exist == 'true'
+        run: |
+          if ! docker info > /dev/null 2>&1; then
+            echo "aliyun Docker login failed!"
+            echo "ALIYUN_LOGIN_STATUS=failed" >> $GITHUB_ENV
+          else
+            echo "aliyun Docker login succeeded."
+            echo "ALIYUN_LOGIN_STATUS=success" >> $GITHUB_ENV
+          fi             
+      - name: Generate Aliyun Container Registry Tags
+        id: acr_ver
+        if: env.ALIYUN_LOGIN_STATUS == 'success'
+        env:
+          IMAGE_REPO:  ${{ env.acr_registry }}/${{ github.repository_owner }}/${{ env.package_name }}
+        run: |
+          echo "version=$IMAGE_REPO:${{ env.branch }}" >> $GITHUB_OUTPUT
+
+      - name: 华为云无法推送
+        run: |
+          echo "华为云无法推送："
+          echo "buildx failed with: ERROR: failed to solve: failed to push xxx: failed commit on ref "index-sha256:xxx": unexpected status from PUT request to https://xxx: 400 Bad Request"
+      - name: Check Huawei Cloud Credentials
+        id: check_huawei_creds
+        run: |
+          if [[ -n "${{ secrets.HUAWEI_USERNAME }}" && -n "${{ secrets.HUAWEI_TOKEN }}" ]]; then
+            echo "creds_exist=true" >> $GITHUB_OUTPUT
+          else
+            echo "creds_exist=false" >> $GITHUB_OUTPUT
+          fi
+      - name: Login to Huawei Cloud 
+        if: steps.check_huawei_creds.outputs.creds_exist == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.hcr_registry }}
+          username: ${{ secrets.HUAWEI_USERNAME }}
+          password: ${{ secrets.HUAWEI_TOKEN }}
+      - name: Verify Huawei Docker Login
+        if: steps.check_huawei_creds.outputs.creds_exist == 'true'
+        run: |
+          if ! docker info > /dev/null 2>&1; then
+            echo "huawei Docker login failed!"
+            echo "HUAWEI_LOGIN_STATUS=failed" >> $GITHUB_ENV
+          else
+            echo "huawei Docker login succeeded."
+            echo "HUAWEI_LOGIN_STATUS=success" >> $GITHUB_ENV
+          fi              
+      - name: Generate Huawei Cloud Container Registry Tags
+        id: hcr_ver
+        if: env.HUAWEI_LOGIN_STATUS == 'success'
+        env:
+          IMAGE_REPO:  ${{ env.hcr_registry }}/${{ github.repository_owner }}/${{ env.package_name }}
+        run: |
+          echo "version=$IMAGE_REPO:${{ env.branch }}" >> $GITHUB_OUTPUT
+
+      - name: Check Tencent Cloud Credentials
+        id: check_tencent_creds
+        run: |
+          if [[ -n "${{ secrets.TENCENT_USERNAME }}" && -n "${{ secrets.TENCENT_TOKEN }}" ]]; then
+            echo "creds_exist=true" >> $GITHUB_OUTPUT
+          else
+            echo "creds_exist=false" >> $GITHUB_OUTPUT
+          fi
+      - name: Login to Tencent Cloud
+        if: steps.check_tencent_creds.outputs.creds_exist == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.tcr_registry }}
+          username: ${{ secrets.TENCENT_USERNAME }}
+          password: ${{ secrets.TENCENT_TOKEN }}
+      - name: Verify Tencent Docker Login
+        if: steps.check_tencent_creds.outputs.creds_exist == 'true'
+        run: |
+          if ! docker info > /dev/null 2>&1; then
+            echo "tencent Docker login failed!"
+            echo "TENCENT_LOGIN_STATUS=failed" >> $GITHUB_ENV
+          else
+            echo "tencent Docker login succeeded."
+            echo "TENCENT_LOGIN_STATUS=success" >> $GITHUB_ENV
+          fi            
+      - name: Generate Tencent Cloud Container Registry Tags
+        id: tcr_ver
+        if: env.TENCENT_LOGIN_STATUS == 'success'
+        env:
+          IMAGE_REPO:  ${{ env.tcr_registry }}/${{ github.repository_owner }}/${{ env.package_name }}
+        run: |
+          echo "version=$IMAGE_REPO:${{ env.branch }}" >> $GITHUB_OUTPUT
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Tags
+        id: tags
+        run: |
+            if [[ -n "${{ steps.ghcr_ver.outputs.version }}" ]]; then
+              echo "ghcr=${{ steps.ghcr_ver.outputs.version }}-${{ env.tag }}" >> $GITHUB_OUTPUT
+            fi
+            
+            if [[ -n "${{ steps.docker_ver.outputs.version }}" ]]; then
+              echo "docker=${{ steps.docker_ver.outputs.version }}-${{ env.tag }}" >> $GITHUB_OUTPUT
+            fi
+            
+            if [[ -n "${{ steps.acr_ver.outputs.version }}" ]]; then
+              echo "acr=${{ steps.acr_ver.outputs.version }}-${{ env.tag }}" >> $GITHUB_OUTPUT
+            fi
+
+            if [[ -n "${{ steps.hcr_ver.outputs.version }}" ]]; then
+              echo "hcr=${{ steps.hcr_ver.outputs.version }}-${{ env.tag }}" >> $GITHUB_OUTPUT
+            fi
+
+            if [[ -n "${{ steps.tcr_ver.outputs.version }}" ]]; then
+              echo "tcr=${{ steps.tcr_ver.outputs.version }}-${{ env.tag }}" >> $GITHUB_OUTPUT
+            fi
+      - name: Build Stable
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          context: .
+          platforms: linux/amd64
+          file: docker/Dockerfile-stable
+          tags: |
+            ${{ steps.tags.outputs.ghcr || '' }}
+            ${{ steps.tags.outputs.docker || '' }}
+            ${{ steps.tags.outputs.acr || '' }}
+            ${{ steps.tags.outputs.hcr || '' }}
+            ${{ steps.tags.outputs.tcr || '' }}
+      - uses: actions/delete-package-versions@v5
+        continue-on-error: true
+        with: 
+          package-name: ${{ env.package_name }}
+          package-type: 'container'
+          delete-only-untagged-versions: 'true'  
+
+  latest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Login to GitHub Container Registry (ghcr.io)
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Verify GHCR Docker Login
+        run: |
+          if ! docker info > /dev/null 2>&1; then
+            echo "ghcr.io Docker login failed!"
+            echo "GHCRIO_LOGIN_STATUS=failed" >> $GITHUB_ENV
+          else
+            echo "ghcr.io Docker login succeeded."
+            echo "GHCRIO_LOGIN_STATUS=success" >> $GITHUB_ENV
+          fi
+      - name: Generate Github Container Registry Tags
+        id: ghcr_ver
+        if: env.GHCRIO_LOGIN_STATUS == 'success'
+        env:
+          IMAGE_REPO: ghcr.io/${{ github.repository_owner }}/${{ env.package_name }}
+        run: |
+          echo "version=$IMAGE_REPO:${{ env.branch }}" >> $GITHUB_OUTPUT
+
+      - name: Check Docker Hub Credentials
+        id: check_docker_creds
+        run: |
+          if [[ -n "${{ secrets.DOCKERHUB_USERNAME }}" && -n "${{ secrets.DOCKERHUB_TOKEN }}" ]]; then
+            echo "creds_exist=true" >> $GITHUB_OUTPUT
+          else
+            echo "creds_exist=false" >> $GITHUB_OUTPUT
+          fi
+      - name: Login to Docker Hub 
+        if: steps.check_docker_creds.outputs.creds_exist == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: docker.io
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Verify Docker Login
+        if: steps.check_docker_creds.outputs.creds_exist == 'true'
+        run: |
+          if ! docker info > /dev/null 2>&1; then
+            echo "docker.io Docker login failed!"
+            echo "DOCKERIO_LOGIN_STATUS=failed" >> $GITHUB_ENV
+          else
+            echo "docker.io Docker login succeeded."
+            echo "DOCKERIO_LOGIN_STATUS=success" >> $GITHUB_ENV
+          fi      
+      - name: Generate Docker Hub Tags
+        id: docker_ver
+        if: env.DOCKERIO_LOGIN_STATUS == 'success'
+        env:
+          IMAGE_REPO: ${{ github.repository_owner }}/${{ env.package_name }}
+        run: |
+          echo "version=$IMAGE_REPO:${{ env.branch }}" >> $GITHUB_OUTPUT
+
+      - name: Check Aliyun Credentials
+        id: check_aliyun_creds
+        run: |
+          if [[ -n "${{ secrets.ALIYUN_USERNAME }}" && -n "${{ secrets.ALIYUN_TOKEN }}" ]]; then
+            echo "creds_exist=true" >> $GITHUB_OUTPUT
+          else
+            echo "creds_exist=false" >> $GITHUB_OUTPUT
+          fi
+      - name: Login to Aliyun 
+        if: steps.check_aliyun_creds.outputs.creds_exist == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.acr_registry }}
+          username: ${{ secrets.ALIYUN_USERNAME }}
+          password: ${{ secrets.ALIYUN_TOKEN }}
+      - name: Verify Aliyun Docker Login
+        if: steps.check_aliyun_creds.outputs.creds_exist == 'true'
+        run: |
+          if ! docker info > /dev/null 2>&1; then
+            echo "aliyun Docker login failed!"
+            echo "ALIYUN_LOGIN_STATUS=failed" >> $GITHUB_ENV
+          else
+            echo "aliyun Docker login succeeded."
+            echo "ALIYUN_LOGIN_STATUS=success" >> $GITHUB_ENV
+          fi             
+      - name: Generate Aliyun Container Registry Tags
+        id: acr_ver
+        if: env.ALIYUN_LOGIN_STATUS == 'success'
+        env:
+          IMAGE_REPO:  ${{ env.acr_registry }}/${{ github.repository_owner }}/${{ env.package_name }}
+        run: |
+          echo "version=$IMAGE_REPO:${{ env.branch }}" >> $GITHUB_OUTPUT
+
+      - name: 华为云无法推送
+        run: |
+          echo "华为云无法推送："
+          echo "buildx failed with: ERROR: failed to solve: failed to push xxx: failed commit on ref "index-sha256:xxx": unexpected status from PUT request to https://xxx: 400 Bad Request"
+      - name: Check Huawei Cloud Credentials
+        id: check_huawei_creds
+        run: |
+          if [[ -n "${{ secrets.HUAWEI_USERNAME }}" && -n "${{ secrets.HUAWEI_TOKEN }}" ]]; then
+            echo "creds_exist=true" >> $GITHUB_OUTPUT
+          else
+            echo "creds_exist=false" >> $GITHUB_OUTPUT
+          fi
+      - name: Login to Huawei Cloud 
+        if: steps.check_huawei_creds.outputs.creds_exist == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.hcr_registry }}
+          username: ${{ secrets.HUAWEI_USERNAME }}
+          password: ${{ secrets.HUAWEI_TOKEN }}
+      - name: Verify Huawei Docker Login
+        if: steps.check_huawei_creds.outputs.creds_exist == 'true'
+        run: |
+          if ! docker info > /dev/null 2>&1; then
+            echo "huawei Docker login failed!"
+            echo "HUAWEI_LOGIN_STATUS=failed" >> $GITHUB_ENV
+          else
+            echo "huawei Docker login succeeded."
+            echo "HUAWEI_LOGIN_STATUS=success" >> $GITHUB_ENV
+          fi              
+      - name: Generate Huawei Cloud Container Registry Tags
+        id: hcr_ver
+        if: env.HUAWEI_LOGIN_STATUS == 'success'
+        env:
+          IMAGE_REPO:  ${{ env.hcr_registry }}/${{ github.repository_owner }}/${{ env.package_name }}
+        run: |
+          echo "version=$IMAGE_REPO:${{ env.branch }}" >> $GITHUB_OUTPUT
+
+      - name: Check Tencent Cloud Credentials
+        id: check_tencent_creds
+        run: |
+          if [[ -n "${{ secrets.TENCENT_USERNAME }}" && -n "${{ secrets.TENCENT_TOKEN }}" ]]; then
+            echo "creds_exist=true" >> $GITHUB_OUTPUT
+          else
+            echo "creds_exist=false" >> $GITHUB_OUTPUT
+          fi
+      - name: Login to Tencent Cloud
+        if: steps.check_tencent_creds.outputs.creds_exist == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.tcr_registry }}
+          username: ${{ secrets.TENCENT_USERNAME }}
+          password: ${{ secrets.TENCENT_TOKEN }}
+      - name: Verify Tencent Docker Login
+        if: steps.check_tencent_creds.outputs.creds_exist == 'true'
+        run: |
+          if ! docker info > /dev/null 2>&1; then
+            echo "tencent Docker login failed!"
+            echo "TENCENT_LOGIN_STATUS=failed" >> $GITHUB_ENV
+          else
+            echo "tencent Docker login succeeded."
+            echo "TENCENT_LOGIN_STATUS=success" >> $GITHUB_ENV
+          fi            
+      - name: Generate Tencent Cloud Container Registry Tags
+        id: tcr_ver
+        if: env.TENCENT_LOGIN_STATUS == 'success'
+        env:
+          IMAGE_REPO:  ${{ env.tcr_registry }}/${{ github.repository_owner }}/${{ env.package_name }}
+        run: |
+          echo "version=$IMAGE_REPO:${{ env.branch }}" >> $GITHUB_OUTPUT
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Tags
+        id: tags
+        run: |
+            if [[ -n "${{ steps.ghcr_ver.outputs.version }}" ]]; then
+              echo "ghcr=${{ steps.ghcr_ver.outputs.version }}" >> $GITHUB_OUTPUT
+            fi
+            
+            if [[ -n "${{ steps.docker_ver.outputs.version }}" ]]; then
+              echo "docker=${{ steps.docker_ver.outputs.version }}" >> $GITHUB_OUTPUT
+            fi
+            
+            if [[ -n "${{ steps.acr_ver.outputs.version }}" ]]; then
+              echo "acr=${{ steps.acr_ver.outputs.version }}" >> $GITHUB_OUTPUT
+            fi
+
+            if [[ -n "${{ steps.hcr_ver.outputs.version }}" ]]; then
+              echo "hcr=${{ steps.hcr_ver.outputs.version }}" >> $GITHUB_OUTPUT
+            fi
+
+            if [[ -n "${{ steps.tcr_ver.outputs.version }}" ]]; then
+              echo "tcr=${{ steps.tcr_ver.outputs.version }}" >> $GITHUB_OUTPUT
+            fi
+      - name: Build Release
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          context: .
+          platforms: linux/amd64
+          file: docker/Dockerfile
+          tags: |
+            ${{ steps.tags.outputs.ghcr || '' }}
+            ${{ steps.tags.outputs.docker || '' }}
+            ${{ steps.tags.outputs.acr || '' }}
+            ${{ steps.tags.outputs.hcr || '' }}
+            ${{ steps.tags.outputs.tcr || '' }}
+      - uses: actions/delete-package-versions@v5
+        continue-on-error: true
+        with: 
+          package-name: ${{ env.package_name }}
+          package-type: 'container'
+          delete-only-untagged-versions: 'true'  

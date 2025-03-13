@@ -17,7 +17,7 @@ import (
 	"github.com/mindoc-org/mindoc/utils"
 )
 
-//系统安装.
+// 系统安装.
 func Install() {
 
 	fmt.Println("Initializing...")
@@ -40,7 +40,7 @@ func Version() {
 	}
 }
 
-//修改用户密码
+// 修改用户密码
 func ModifyPassword() {
 	var account, password string
 
@@ -94,7 +94,7 @@ func ModifyPassword() {
 
 }
 
-//初始化数据
+// 初始化数据
 func initialization() {
 
 	err := models.NewOption().Init()

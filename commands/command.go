@@ -19,12 +19,13 @@ import (
 
 	beegoCache "github.com/beego/beego/v2/client/cache"
 	_ "github.com/beego/beego/v2/client/cache/memcache"
-	"github.com/beego/beego/v2/client/cache/redis"
+	_ "github.com/beego/beego/v2/client/cache/redis"
+
 	"github.com/beego/beego/v2/client/orm"
 	"github.com/beego/beego/v2/core/logs"
 	"github.com/beego/beego/v2/server/web"
 	"github.com/beego/i18n"
-	"github.com/howeyc/fsnotify"
+	"github.com/fsnotify/fsnotify"
 	_ "github.com/lib/pq"
 	"github.com/lifei6671/gocaptcha"
 	"github.com/mindoc-org/mindoc/cache"
@@ -382,7 +383,7 @@ func ResolveCommand(args []string) {
 			_ = filetil.CopyFile(conf.ConfigurationFile, config)
 		}
 	}
-	if err := gocaptcha.ReadFonts(conf.WorkingDir("static", "fonts"), ".ttf"); err != nil {
+	if err := gocaptcha.SetFontPath(conf.WorkingDir("static", "fonts")); err != nil {
 		log.Fatal("读取字体文件时出错 -> ", err)
 	}
 
@@ -417,7 +418,7 @@ func ResolveCommand(args []string) {
 	if !filetil.FileExists(fonts) {
 		log.Fatal("Font path not exist.")
 	}
-	if err := gocaptcha.ReadFonts(filepath.Join(conf.WorkingDirectory, "static", "fonts"), ".ttf"); err != nil {
+	if err := gocaptcha.SetFontPath(filepath.Join(conf.WorkingDirectory, "static", "fonts")); err != nil {
 		log.Fatal("读取字体失败 ->", err)
 	}
 
@@ -469,14 +470,11 @@ func RegisterCache() {
 		beegoCache.DefaultEvery = cacheInterval
 		cache.Init(memory)
 	} else if cacheProvider == "redis" {
-		//设置Redis前缀
-		if key := web.AppConfig.DefaultString("cache_redis_prefix", ""); key != "" {
-			redis.DefaultKey = key
-		}
 		var redisConfig struct {
 			Conn     string `json:"conn"`
-			Password string `json:"password"`
+			Key      string `json:"key"`
 			DbNum    string `json:"dbNum"`
+			Password string `json:"password"`
 		}
 		redisConfig.DbNum = "0"
 		redisConfig.Conn = web.AppConfig.DefaultString("cache_redis_host", "")
@@ -485,6 +483,10 @@ func RegisterCache() {
 		}
 		if dbNum := web.AppConfig.DefaultInt("cache_redis_db", 0); dbNum > 0 {
 			redisConfig.DbNum = strconv.Itoa(dbNum)
+		}
+		// 设置Redis前缀
+		if key := web.AppConfig.DefaultString("cache_redis_prefix", ""); key != "" {
+			redisConfig.Key = key
 		}
 
 		bc, err := json.Marshal(&redisConfig)
@@ -534,16 +536,18 @@ func RegisterAutoLoadConfig() {
 	if conf.AutoLoadDelay > 0 {
 
 		watcher, err := fsnotify.NewWatcher()
-
 		if err != nil {
 			logs.Error("创建配置文件监控器失败 ->", err)
 		}
 		go func() {
 			for {
 				select {
-				case ev := <-watcher.Event:
-					//如果是修改了配置文件
-					if ev.IsModify() {
+				case event, ok := <-watcher.Events:
+					if !ok {
+						return
+					}
+					// 如果是修改了配置文件
+					if event.Has(fsnotify.Write) {
 						if err := web.LoadAppConfig("ini", conf.ConfigurationFile); err != nil {
 							logs.Error("An error occurred ->", err)
 							continue
@@ -551,22 +555,24 @@ func RegisterAutoLoadConfig() {
 						RegisterCache()
 						RegisterLogger("")
 						logs.Info("配置文件已加载 ->", conf.ConfigurationFile)
-					} else if ev.IsRename() {
-						_ = watcher.WatchFlags(conf.ConfigurationFile, fsnotify.FSN_MODIFY|fsnotify.FSN_RENAME)
 					}
-					logs.Info(ev.String())
-				case err := <-watcher.Error:
+				case err, ok := <-watcher.Errors:
+					if !ok {
+						return
+					}
 					logs.Error("配置文件监控器错误 ->", err)
-
 				}
 			}
 		}()
 
-		err = watcher.WatchFlags(conf.ConfigurationFile, fsnotify.FSN_MODIFY|fsnotify.FSN_RENAME)
-
+		// Add a path.
+		err = watcher.Add(conf.ConfigurationFile)
 		if err != nil {
 			logs.Error("监控配置文件失败 ->", err)
 		}
+
+		// Block main goroutine forever.
+		// <-make(chan struct{})
 	}
 }
 
@@ -605,7 +611,7 @@ func init() {
 	if configPath, err := filepath.Abs(conf.ConfigurationFile); err == nil {
 		conf.ConfigurationFile = configPath
 	}
-	if err := gocaptcha.ReadFonts(conf.WorkingDir("static", "fonts"), ".ttf"); err != nil {
+	if err := gocaptcha.SetFontPath(conf.WorkingDir("static", "fonts")); err != nil {
 		log.Fatal("读取字体文件失败 ->", err)
 	}
 	gob.Register(models.Member{})

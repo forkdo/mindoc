@@ -1,6 +1,4 @@
 package models
 
-
-type BlogResult struct{
-
+type BlogResult struct {
 }

@@ -17,7 +17,7 @@ type SearchController struct {
 	BaseController
 }
 
-//搜索首页
+// 搜索首页
 func (c *SearchController) Index() {
 	c.Prepare()
 	c.TplName = "search/index.tpl"
@@ -82,7 +82,7 @@ func (c *SearchController) Index() {
 	}
 }
 
-//搜索用户
+// 搜索用户
 func (c *SearchController) User() {
 	c.Prepare()
 	key := c.Ctx.Input.Param(":key")

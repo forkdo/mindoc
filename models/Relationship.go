@@ -50,7 +50,7 @@ func (m *Relationship) Find(id int) (*Relationship, error) {
 	return m, err
 }
 
-//查询指定项目的创始人.
+// 查询指定项目的创始人.
 func (m *Relationship) FindFounder(book_id int) (*Relationship, error) {
 	o := orm.NewOrm()
 

@@ -88,7 +88,7 @@ func StartAndGC(config string) error {
 	return bm.StartAndGC(config)
 }
 
-//Init will initialize cache
+// Init will initialize cache
 func Init(c cache.Cache) {
 	bm = c
 }

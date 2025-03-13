@@ -16,7 +16,7 @@ type Attachments struct {
 	BaseDir string
 }
 
-//SendMail 发送电邮
+// SendMail 发送电邮
 func SendMail(subject string, content string, receiver, sender string,
 	bcc []string, smtpConfig *SMTPConfig, attachments *Attachments) error {
 	c := NewSMTPClient(smtpConfig)
