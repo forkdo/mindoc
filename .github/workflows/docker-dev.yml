@@ -5,90 +5,153 @@ on:
     branches:
       - dev*
     paths:
-      - "docker/Dockerfile*"
+      - docker-bake.hcl
+      - "docker/*Dockerfile"
       - ".github/workflows/docker-dev.yml"
 
 env:
   package_name: mindoc
+  go_version: 1.24
 
 jobs:
-  slim:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Source Code
         uses: actions/checkout@v4
+      # - name: Docker meta
+      #   id: meta
+      #   uses: docker/metadata-action@v5
+      #   env: 
+      #     GHCR_SLUG: ghcr.io/${{ github.repository_owner }}/${{ env.package_name }}        
+      #   with:
+      #     images: |
+      #       ${{ env.GHCR_SLUG }}
+      #     labels: |
+      #       org.opencontainers.image.title=MinDoc
+      #       org.opencontainers.image.description=MinDoc is a document tool for developers. It's based on Vue and Golang, features Markdown editing, real-time preview, and collaborative editing.
+      #       org.opencontainers.image.vendor=Jetsung        
       - name: Login to GitHub Container Registry (ghcr.io)
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build Slim
-        uses: docker/build-push-action@v6
-        with:
-          push: true
-          context: .
-          platforms: linux/amd64
-          file: docker/Dockerfile-slim
-          tags: |
-            ghcr.io/${{ github.repository_owner }}/${{ env.package_name }}:dev-slim        
-      - uses: actions/delete-package-versions@v5
-        continue-on-error: true
-        with: 
-          package-name: ${{ env.package_name }}
-          package-type: 'container'
-          delete-only-untagged-versions: 'true'              
+      
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-  stable:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Source Code
-        uses: actions/checkout@v4
-      - name: Login to GitHub Container Registry (ghcr.io)
-        uses: docker/login-action@v3
+      - name: Build
+        uses: docker/bake-action@v6
+        env: 
+          GHCR_SLUG: ghcr.io/${{ github.repository_owner }}/${{ env.package_name }}        
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build Stable
-        uses: docker/build-push-action@v6
-        with:
-          push: true
-          context: .
-          platforms: linux/amd64
-          file: docker/Dockerfile-stable
-          tags: |
-            ghcr.io/${{ github.repository_owner }}/${{ env.package_name }}:dev-stable          
+          files: |
+            ./docker-bake.hcl
+#            cwd://${{ steps.meta.outputs.bake-file }}
+          targets: dev
+          push: ${{ github.event_name != 'pull_request' }}
+          set: |
+            _common.args.GO_VERSION=${{ env.go_version }}
+            _common.args.GOPROXY=https://proxy.golang.org,direct
+      
+      # - name: Check manifest
+      #   if: github.event_name != 'pull_request'
+      #   run: |
+      #     docker buildx imagetools inspect ${{ env.GHCR_SLUG }}:${{ steps.meta.outputs.version }}
+      
+      # - name: Inspect image
+      #   if: github.event_name != 'pull_request'
+      #   run: |
+      #     docker pull ${{ env.GHCR_SLUG }}:${{ steps.meta.outputs.version }}
+      #     docker image inspect ${{ env.GHCR_SLUG }}:${{ steps.meta.outputs.version }}          
+      
       - uses: actions/delete-package-versions@v5
         continue-on-error: true
         with: 
           package-name: ${{ env.package_name }}
           package-type: 'container'
-          delete-only-untagged-versions: 'true'        
+          delete-only-untagged-versions: 'true'      
 
-  latest:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Source Code
-        uses: actions/checkout@v4
-      - name: Login to GitHub Container Registry (ghcr.io)
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}          
-      - name: Build Release
-        uses: docker/build-push-action@v6
-        with:
-          push: true
-          context: .
-          platforms: linux/amd64
-          file: docker/Dockerfile
-          tags: |
-            ghcr.io/${{ github.repository_owner }}/${{ env.package_name }}:dev            
-      - uses: actions/delete-package-versions@v5
-        continue-on-error: true
-        with: 
-          package-name: ${{ env.package_name }}
-          package-type: 'container'
-          delete-only-untagged-versions: 'true'             
+  # slim:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout Source Code
+  #       uses: actions/checkout@v4
+  #     - name: Login to GitHub Container Registry (ghcr.io)
+  #       uses: docker/login-action@v3
+  #       with:
+  #         registry: ghcr.io
+  #         username: ${{ github.actor }}
+  #         password: ${{ secrets.GITHUB_TOKEN }}
+  #     - name: Build Slim
+  #       uses: docker/build-push-action@v6
+  #       with:
+  #         push: true
+  #         context: .
+  #         platforms: linux/amd64
+  #         file: docker/slim.Dockerfile
+  #         tags: |
+  #           ghcr.io/${{ github.repository_owner }}/${{ env.package_name }}:dev-slim        
+  #     - uses: actions/delete-package-versions@v5
+  #       continue-on-error: true
+  #       with: 
+  #         package-name: ${{ env.package_name }}
+  #         package-type: 'container'
+  #         delete-only-untagged-versions: 'true'              
+
+  # lite:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout Source Code
+  #       uses: actions/checkout@v4
+  #     - name: Login to GitHub Container Registry (ghcr.io)
+  #       uses: docker/login-action@v3
+  #       with:
+  #         registry: ghcr.io
+  #         username: ${{ github.actor }}
+  #         password: ${{ secrets.GITHUB_TOKEN }}
+  #     - name: Build Lite
+  #       uses: docker/build-push-action@v6
+  #       with:
+  #         push: true
+  #         context: .
+  #         platforms: linux/amd64
+  #         file: docker/lite.Dockerfile
+  #         tags: |
+  #           ghcr.io/${{ github.repository_owner }}/${{ env.package_name }}:dev-lite          
+  #     - uses: actions/delete-package-versions@v5
+  #       continue-on-error: true
+  #       with: 
+  #         package-name: ${{ env.package_name }}
+  #         package-type: 'container'
+  #         delete-only-untagged-versions: 'true'        
+
+  # latest:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout Source Code
+  #       uses: actions/checkout@v4
+  #     - name: Login to GitHub Container Registry (ghcr.io)
+  #       uses: docker/login-action@v3
+  #       with:
+  #         registry: ghcr.io
+  #         username: ${{ github.actor }}
+  #         password: ${{ secrets.GITHUB_TOKEN }}          
+  #     - name: Build Release
+  #       uses: docker/build-push-action@v6
+  #       with:
+  #         push: true
+  #         context: .
+  #         platforms: linux/amd64
+  #         file: docker/Dockerfile
+  #         tags: |
+  #           ghcr.io/${{ github.repository_owner }}/${{ env.package_name }}:dev            
+  #     - uses: actions/delete-package-versions@v5
+  #       continue-on-error: true
+  #       with: 
+  #         package-name: ${{ env.package_name }}
+  #         package-type: 'container'
+  #         delete-only-untagged-versions: 'true'             

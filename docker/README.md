@@ -7,7 +7,7 @@
 | [**Docker Hub**](https://hub.docker.com/r/forkdo/mindoc)                                           | `forkdo/mindoc`          
 | [**GitHub Container Registry**](https://github.com/forkdo/mindoc/pkgs/container/mindoc)            | `ghcr.io/forkdo/mindoc` 
 | **Tencent Cloud Container Registry** | `ccr.ccs.tencentyun.com/forkdo/mindoc`
-| **Aliyun Container Registry** | `crpi-6q2ncgoagz57loxj.cn-guangzhou.personal.cr.aliyuncs.com/forkdo/mindoc`
+| **Aliyun Container Registry** | `registry.cn-guangzhou.aliyuncs.com/forkdo/mindoc`
 
 ```bash
 docker pull forkdo/mindoc:latest
@@ -19,31 +19,31 @@ docker pull ghcr.io/forkdo/mindoc:latest
 docker pull ccr.ccs.tencentyun.com/forkdo/mindoc:latest
 
 # Aliyun Container Registry
-docker pull docker pull crpi-6q2ncgoagz57loxj.cn-guangzhou.personal.cr.aliyuncs.com/forkdo/mindoc:latest
+docker pull docker pull registry.cn-guangzhou.aliyuncs.com/forkdo/mindoc:latest
 ```
 
 ## 构建教程：
 
 ### 完整版：`latest`（1GB）
 
-基础镜像为 **`debian:12-slim`**。构建时**会**自动安装 **Calibre**，支持导出功能。
+基础镜像为 **`debian:12-slim`**。已预装 **Calibre**，支持导出功能。
 
 **构建命令：**
 ```bash
 docker build -f docker/Dockerfile -t mindoc:latest .
 ```
 
-### 稳定版：`stable` (150MB)
-基础镜像为 **`debian:12-slim`**。构建时**不会**自动安装 **Calibre** ，支持后期安装。
+### 轻量版：`lite` (150MB)
+基础镜像为 **`debian:12-slim`**。未预装 **Calibre** ，支持后期安装。
 
 **构建命令：**
 ```bash
-docker build -f docker/Dockerfile-stable -t mindoc:stable .
+docker build -f docker/lite.Dockerfile -t mindoc:lite .
 ```
 
 ### 精简版：`slim`（130MB）
 
-基础镜像为 `gcr.io/distroless/cc-debian12`，不支持导出功能（**Calibre**），不支持 **shell** 命令。
+基础镜像为 `gcr.io/distroless/cc-debian12`，不支持导出功能（**Calibre**），不支持 **Shell** 命令。
 
 **构建命令：**
 ```bash
@@ -75,28 +75,28 @@ docker run -d -e TZ=Asia/Shanghai -v $(pwd)/mindoc:/mindoc -p 8181:8181 --name m
 docker run -d -e TZ=Asia/Shanghai -v $(pwd)/mindoc:/mindoc -p 8181:8181 --name mindoc mindoc:latest start
 ```
 
-[**稳定版**](Dockerfile-stable)
+[**轻量版**](Dockerfile-lite)
 1. 初始化数据库
 若使用非 SQLite 数据库，需自行修改 `conf/app.conf` 文件中的数据库配置信息。
 
 ```bash
-docker run --rm -v $(pwd)/mindoc:/mindoc mindoc:stable install
+docker run --rm -v $(pwd)/mindoc:/mindoc mindoc:lite install
 ```
 
 2. 启动服务
 ```bash
-docker run -d -e TZ=Asia/Shanghai -v $(pwd)/mindoc:/mindoc -p 8181:8181 --name mindoc mindoc:stable
+docker run -d -e TZ=Asia/Shanghai -v $(pwd)/mindoc:/mindoc -p 8181:8181 --name mindoc mindoc:lite
 
 # 支持 Calibre 导出方式启动（需要使用网络安装 Calibre）
-docker run -d -e TZ=Asia/Shanghai -v $(pwd)/mindoc:/mindoc -p 8181:8181 --name mindoc mindoc:stable calibre
+docker run -d -e TZ=Asia/Shanghai -v $(pwd)/mindoc:/mindoc -p 8181:8181 --name mindoc mindoc:lite calibre
 ```
 
 **直接一步到位（第 `1+2` 步）**
 ```bash
-docker run -d -e TZ=Asia/Shanghai -v $(pwd)/mindoc:/mindoc -p 8181:8181 --name mindoc mindoc:stable start
+docker run -d -e TZ=Asia/Shanghai -v $(pwd)/mindoc:/mindoc -p 8181:8181 --name mindoc mindoc:lite start
 
 # 支持 Calibre 导出方式启动（需要使用网络安装 Calibre）
-docker run -d -e TZ=Asia/Shanghai -v $(pwd)/mindoc:/mindoc -p 8181:8181 --name mindoc mindoc:stable start calibre
+docker run -d -e TZ=Asia/Shanghai -v $(pwd)/mindoc:/mindoc -p 8181:8181 --name mindoc mindoc:lite start calibre
 ```
 
 [**精简版**](Dockerfile-slim)
