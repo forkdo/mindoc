@@ -229,7 +229,7 @@ jobs:
           context: .
           build-args: |
             VERSION=${{ env.branch }}          
-          platforms: linux/amd64,linux/arm64,linux/loong64
+          platforms: linux/amd64,linux/arm64
           file: docker/slim.Dockerfile
           tags: |
             ${{ steps.tags.outputs.ghcr || '' }}
@@ -458,7 +458,7 @@ jobs:
           context: .
           build-args: |
             VERSION=${{ env.branch }}          
-          platforms: linux/amd64,linux/arm64,linux/loong64
+          platforms: linux/amd64,linux/arm64
           file: docker/lite.Dockerfile
           tags: |
             ${{ steps.tags.outputs.ghcr || '' }}
@@ -696,7 +696,7 @@ jobs:
           context: .
           build-args: |
             VERSION=${{ env.branch }}
-          platforms: linux/amd64,linux/arm64,linux/loong64
+          platforms: linux/amd64,linux/arm64
           file: docker/Dockerfile
           tags: |
             ${{ steps.tags.outputs.ghcr || '' }}
