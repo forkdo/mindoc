@@ -221,7 +221,7 @@ jobs:
         with:
           push: true
           context: .
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           file: docker/slim.Dockerfile
           tags: |
             ${{ steps.tags.outputs.ghcr || '' }}
@@ -436,7 +436,7 @@ jobs:
         with:
           push: true
           context: .
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           file: docker/lite.Dockerfile
           tags: |
             ${{ steps.tags.outputs.ghcr || '' }}
@@ -649,7 +649,7 @@ jobs:
         with:
           push: true
           context: .
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           file: docker/Dockerfile
           tags: |
             ${{ steps.tags.outputs.ghcr || '' }}
