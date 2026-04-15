@@ -1,5 +1,5 @@
 variable "GO_VERSION" {
-  default = "1.24"
+  default = "1.26"
 }
 
 variable "GO_PROXY" {
@@ -36,20 +36,20 @@ target "dev" {
     name = "dev-${item.tgt}"
     matrix = {
         item = [
-            {
-                tgt = "latest"
-                file = ""
-                tag = "dev"
-            },
+          #            {
+          #                tgt = "latest"
+          #                file = ""
+          #                tag = "dev"
+          #            },
+          #            {
+          #                tgt = "slim"
+          #                file = "slim."
+          #                tag = "dev-slim"
+          #            },            
             {
                 tgt = "lite"
                 file = "lite."
                 tag = "dev-lite"
-            },
-            {
-                tgt = "slim"
-                file = "slim."
-                tag = "dev-slim"
             }
         ]
     }

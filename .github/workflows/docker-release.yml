@@ -9,6 +9,7 @@ on:
       - ".github/workflows/docker-release.yml"
 
 env:
+  go_version: 1.26
   package_name: mindoc
   acr_registry: registry.cn-guangzhou.aliyuncs.com
   hcr_registry: swr.ap-southeast-3.myhuaweicloud.com
@@ -26,7 +27,7 @@ jobs:
       TENCENT_LOGIN_STATUS: failed
     steps:
       - name: Checkout Source Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set version without 'v' prefix
         run: |
@@ -36,7 +37,7 @@ jobs:
             echo "branch=$ref_tag" >> $GITHUB_ENV       
 
       - name: Login to GitHub Container Registry (ghcr.io)
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -68,7 +69,7 @@ jobs:
           fi
       - name: Login to Docker Hub 
         if: steps.check_docker_creds.outputs.creds_exist == 'true'
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: docker.io
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -101,7 +102,7 @@ jobs:
           fi
       - name: Login to Aliyun 
         if: steps.check_aliyun_creds.outputs.creds_exist == 'true'
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ${{ env.acr_registry }}
           username: ${{ secrets.ALIYUN_USERNAME }}
@@ -138,7 +139,7 @@ jobs:
           fi
       - name: Login to Huawei Cloud 
         if: steps.check_huawei_creds.outputs.creds_exist == 'true'
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ${{ env.hcr_registry }}
           username: ${{ secrets.HUAWEI_USERNAME }}
@@ -171,7 +172,7 @@ jobs:
           fi
       - name: Login to Tencent Cloud
         if: steps.check_tencent_creds.outputs.creds_exist == 'true'
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ${{ env.tcr_registry }}
           username: ${{ secrets.TENCENT_USERNAME }}
@@ -195,10 +196,10 @@ jobs:
           echo "version=$IMAGE_REPO:${{ env.branch }}" >> $GITHUB_OUTPUT
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Tags
         id: tags
@@ -223,12 +224,13 @@ jobs:
               echo "tcr=${{ steps.tcr_ver.outputs.version }}-${{ env.tag }}" >> $GITHUB_OUTPUT
             fi
       - name: Build Slim
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           push: true
           context: .
           build-args: |
-            VERSION=${{ env.branch }}          
+            VERSION=${{ env.branch }}
+            GO_VERSION=${{ env.go_version }}
           platforms: linux/amd64
           file: docker/slim.Dockerfile
           tags: |
@@ -242,7 +244,8 @@ jobs:
         with: 
           package-name: ${{ env.package_name }}
           package-type: 'container'
-          delete-only-untagged-versions: 'true'  
+          delete-only-untagged-versions: 'true'
+          min-versions-to-keep: 5
 
   lite:
     runs-on: ubuntu-latest
@@ -255,7 +258,7 @@ jobs:
       TENCENT_LOGIN_STATUS: failed
     steps:
       - name: Checkout Source Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set version without 'v' prefix
         run: |
@@ -265,7 +268,7 @@ jobs:
             echo "branch=$ref_tag" >> $GITHUB_ENV          
 
       - name: Login to GitHub Container Registry (ghcr.io)
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -297,7 +300,7 @@ jobs:
           fi
       - name: Login to Docker Hub 
         if: steps.check_docker_creds.outputs.creds_exist == 'true'
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: docker.io
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -330,7 +333,7 @@ jobs:
           fi
       - name: Login to Aliyun 
         if: steps.check_aliyun_creds.outputs.creds_exist == 'true'
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ${{ env.acr_registry }}
           username: ${{ secrets.ALIYUN_USERNAME }}
@@ -367,7 +370,7 @@ jobs:
           fi
       - name: Login to Huawei Cloud 
         if: steps.check_huawei_creds.outputs.creds_exist == 'true'
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ${{ env.hcr_registry }}
           username: ${{ secrets.HUAWEI_USERNAME }}
@@ -400,7 +403,7 @@ jobs:
           fi
       - name: Login to Tencent Cloud
         if: steps.check_tencent_creds.outputs.creds_exist == 'true'
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ${{ env.tcr_registry }}
           username: ${{ secrets.TENCENT_USERNAME }}
@@ -424,10 +427,10 @@ jobs:
           echo "version=$IMAGE_REPO:${{ env.branch }}" >> $GITHUB_OUTPUT
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Tags
         id: tags
@@ -452,12 +455,13 @@ jobs:
               echo "tcr=${{ steps.tcr_ver.outputs.version }}-${{ env.tag }}" >> $GITHUB_OUTPUT
             fi
       - name: Build lite
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           push: true
           context: .
           build-args: |
-            VERSION=${{ env.branch }}          
+            VERSION=${{ env.branch }}
+            GO_VERSION=${{ env.go_version }}      
           platforms: linux/amd64
           file: docker/lite.Dockerfile
           tags: |
@@ -483,7 +487,7 @@ jobs:
       TENCENT_LOGIN_STATUS: failed
     steps:
       - name: Checkout Source Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set version without 'v' prefix
         run: |
@@ -493,7 +497,7 @@ jobs:
             echo "branch=$ref_tag" >> $GITHUB_ENV          
 
       - name: Login to GitHub Container Registry (ghcr.io)
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -526,7 +530,7 @@ jobs:
           fi
       - name: Login to Docker Hub 
         if: steps.check_docker_creds.outputs.creds_exist == 'true'
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: docker.io
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -560,7 +564,7 @@ jobs:
           fi
       - name: Login to Aliyun 
         if: steps.check_aliyun_creds.outputs.creds_exist == 'true'
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ${{ env.acr_registry }}
           username: ${{ secrets.ALIYUN_USERNAME }}
@@ -598,7 +602,7 @@ jobs:
           fi
       - name: Login to Huawei Cloud 
         if: steps.check_huawei_creds.outputs.creds_exist == 'true'
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ${{ env.hcr_registry }}
           username: ${{ secrets.HUAWEI_USERNAME }}
@@ -632,7 +636,7 @@ jobs:
           fi
       - name: Login to Tencent Cloud
         if: steps.check_tencent_creds.outputs.creds_exist == 'true'
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ${{ env.tcr_registry }}
           username: ${{ secrets.TENCENT_USERNAME }}
@@ -657,10 +661,10 @@ jobs:
           echo "latest=$IMAGE_REPO:latest" >> $GITHUB_OUTPUT
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Tags
         id: tags
@@ -690,12 +694,13 @@ jobs:
               echo "tcr_latest=${{ steps.tcr_ver.outputs.latest }}" >> $GITHUB_OUTPUT
             fi
       - name: Build lite
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           push: true
           context: .
           build-args: |
             VERSION=${{ env.branch }}
+            GO_VERSION=${{ env.go_version }}
           platforms: linux/amd64
           file: docker/Dockerfile
           tags: |
