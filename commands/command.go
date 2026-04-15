@@ -139,6 +139,7 @@ func RegisterModel() {
 		new(models.Comment),
 		new(models.WorkWeixinAccount),
 		new(models.DingTalkAccount),
+		new(models.ContentReverseIndex),
 	)
 	gob.Register(models.Blog{})
 	gob.Register(models.Document{})
@@ -238,8 +239,21 @@ func RegisterCommand() {
 	} else if len(os.Args) >= 2 && os.Args[1] == "update" {
 		Update()
 		os.Exit(0)
+	} else if len(os.Args) >= 2 && os.Args[1] == "reindex" {
+		ResolveCommand(os.Args[2:])
+		fmt.Println("开始全量重建倒排索引...")
+		if err := models.RebuildAllIndexes(); err != nil {
+			fmt.Println("倒排索引重建失败，索引表可能处于部分重建状态，请重新执行 reindex:", err)
+			os.Exit(1)
+		}
+		fmt.Println("倒排索引重建完成")
+		os.Exit(0)
 	}
 
+}
+
+func shouldInitializeMissingIndexes() bool {
+	return !(len(os.Args) >= 2 && os.Args[1] == "reindex")
 }
 
 // 注册模板函数
@@ -341,7 +355,7 @@ func RegisterFunction() {
 		}
 		lang := langItemSplit[0]
 		i18nMap[lang] = langItemSplit[1]
-		if err := i18n.SetMessage(lang, "conf/lang/"+lang+".ini"); err != nil {
+		if err := i18n.SetMessage(lang, conf.WorkingDir("conf", "lang", lang+".ini")); err != nil {
 			logs.Error("Fail to set message file: " + err.Error())
 			return
 		}
@@ -426,9 +440,11 @@ func ResolveCommand(args []string) {
 	RegisterCache()
 	RegisterModel()
 	RegisterLogger(conf.LogFile)
+	if shouldInitializeMissingIndexes() {
+		models.InitializeMissingIndexes()
+	}
 
 	ModifyPassword()
-
 }
 
 // 注册缓存管道
@@ -475,6 +491,10 @@ func RegisterCache() {
 			Key      string `json:"key"`
 			DbNum    string `json:"dbNum"`
 			Password string `json:"password"`
+		}
+		//设置Redis前缀
+		if key := web.AppConfig.DefaultString("cache_redis_prefix", ""); key != "" {
+			redisConfig.Key = key // 设置Redis前缀，替代原来的 redis.DefaultKey
 		}
 		redisConfig.DbNum = "0"
 		redisConfig.Conn = web.AppConfig.DefaultString("cache_redis_host", "")

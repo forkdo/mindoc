@@ -14,6 +14,7 @@ import (
 
 	// "github.com/mindoc-org/mindoc/conf"
 	"github.com/mindoc-org/mindoc/controllers"
+	"github.com/mindoc-org/mindoc/mcp"
 )
 
 type CorsTransport struct {
@@ -261,6 +262,8 @@ func init() {
 	web.Router("/comment/index", &controllers.CommentController{}, "*:Index")
 
 	web.Router("/search", &controllers.SearchController{}, "get:Index")
+	web.Router("/search-v2", &controllers.SearchController{}, "get:IndexV2")
+	web.Router("/api/search-v2", &controllers.SearchController{}, "get:SearchV2")
 
 	web.Router("/tag/:key", &controllers.LabelController{}, "get:Index")
 	web.Router("/tags", &controllers.LabelController{}, "get:List")
@@ -268,4 +271,10 @@ func init() {
 	web.Router("/items", &controllers.ItemsetsController{}, "get:Index")
 	web.Router("/items/:key", &controllers.ItemsetsController{}, "get:List")
 
+	if web.AppConfig.DefaultBool("enable_mcp_server", false) {
+		mcpServer := mcp.NewMCPServer()
+		web.Any("/mcp/*", func(ctx *context.Context) {
+			mcpServer.ServeHTTP().ServeHTTP(ctx.ResponseWriter, ctx.Request)
+		})
+	}
 }

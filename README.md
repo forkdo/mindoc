@@ -12,6 +12,7 @@ MinDoc 的前身是 [SmartWiki](https://github.com/lifei6671/SmartWiki) 文档�
 可以用来储存日常接口文档，数据库字典，手册说明等文档。内置项目管理，用户管理，权限管理等功能，能够满足大部分中小团队的文档管理需求。
 
 ##### 演示站点&文档:
+- https://demo.mindoc.cn/docs/mindochelp
 - https://www.iminho.me/wiki/docs/mindoc/
 - https://doc.gsw945.com/docs/mindoc-docs/
 
@@ -38,11 +39,11 @@ MinDoc 的前身是 [SmartWiki](https://github.com/lifei6671/SmartWiki) 文档�
 
 ~~如果你的服务器上没有安装golang程序请手动设置一个环境变量如下：键名为 ZONEINFO，值为MinDoc跟目录下的/lib/time/zoneinfo.zip 。~~
 
-更多信息请查看手册： [MinDoc 使用手册](https://www.iminho.me/wiki/docs/mindoc/mindoc-summary.md)
+更多信息请查看手册： [MinDoc 使用手册](https://demo.mindoc.cn/docs/mindochelp/mindoc-summary)
 
 对于没有Golang使用经验的用户，可以从 [https://github.com/mindoc-org/mindoc/releases](https://github.com/mindoc-org/mindoc/releases) 这里下载编译完的程序。
 
-如果有Golang开发经验，建议通过编译安装，要求golang版本不小于1.15.1(需支持`CGO`、`go mod`和`import _ "time/tzdata"`)(推荐Go版本为1.18.1)。
+如果有Golang开发经验，建议通过编译安装，要求golang版本不小于1.23.0(需支持`CGO`、`go mod`和`import _ "time/tzdata"`)(推荐Go版本为1.23.x)。
 > 注意: CentOS7上GLibC版本低，常规编译版本不能使用。需要自行源码编译,或使用使用musl编译版本。
 
 ## 常规编译
@@ -78,13 +79,18 @@ MinDoc 如果使用MySQL储存数据，则编码必须是`utf8mb4_general_ci`。
 
 ### 安装 musl-gcc
 ```bash
+# 手动安装
 wget -c http://musl.libc.org/releases/musl-1.2.2.tar.gz
 tar -xvf musl-1.2.2.tar.gz
 cd musl-1.2.2
 ./configure
 make
 sudo make install
+# apt 安装
+sudo apt install musl-tools
 ```
+
+
 ### 使用 musl-gcc 编译 mindoc
 ```bash
 go mod tidy -v
@@ -141,13 +147,13 @@ MINDOC_ENABLE_EXPORT        开启导出(默认为false)
 ##### Windows
 ```bash
 set MINDOC=//d/mindoc
-docker run -it --name=mindoc --restart=always -v "%MINDOC%/conf":"/mindoc/conf" -p 8181:8181 -e MINDOC_ENABLE_EXPORT=true -d registry.cn-hangzhou.aliyuncs.com/mindoc-org/mindoc:v2.1
+docker run -it --name=mindoc --restart=always -v "%MINDOC%/conf":"/mindoc/conf" -p 8181:8181 -e MINDOC_ENABLE_EXPORT=true -d registry.cn-hangzhou.aliyuncs.com/mindoc-org/mindoc:v2.2-beta.2
 ```
 
 ##### Linux、Mac
 ```bash
 export MINDOC=/home/ubuntu/mindoc-docker
-docker run -it --name=mindoc --restart=always -v "${MINDOC}/conf":"/mindoc/conf" -p 8181:8181 -e MINDOC_ENABLE_EXPORT=true -d registry.cn-hangzhou.aliyuncs.com/mindoc-org/mindoc:v2.1
+docker run -it --name=mindoc --restart=always -v "${MINDOC}/conf":"/mindoc/conf" -p 8181:8181 -e MINDOC_ENABLE_EXPORT=true -d registry.cn-hangzhou.aliyuncs.com/mindoc-org/mindoc:v2.2-beta.2
 ```
 
 ##### 举个栗子-更多环境变量示例(镜像已过期，仅供参考，请以当前镜像为准)
@@ -190,6 +196,33 @@ docker run -p 8181:8181 --name mindoc -e DB_ADAPTER=mysql -e MYSQL_PORT_3306_TCP
         > 
         > 更多 docker-compose 的使用相关的内容 请查看官网文档或百度
    
+#### MCP服务器对接指导
+1. 请在配置文件中启用MCP服务器功能
+在配置文件`app.conf`中添加或修改为如下内容：
+```
+# MCP Server 功能
+enable_mcp_server="${MINDOC_ENABLE_MCP_SERVER||true}"
+mcp_api_key="${MINDOC_MCP_API_KEY||demo-mcp-api-key}"
+```
+说明：
+`enable_mcp_server`为是否启用MCP服务器功能，默认为true。
+`mcp_api_key` 为MCP服务器的API密钥，示例配置中默认为`demo-mcp-api-key`，可根据需求自行修改。
+
+2. 在Dify等AI应用或其他可调用MCP服务器的项目配置中添加如下Mindoc配置
+```json
+{
+  "mindoc": {
+    "transport": "streamable_http",
+    "url": "http://127.0.0.1:8181/mcp/?api_key=demo-mcp-api-key",
+    "headers":{},
+    "timeout":600
+  }
+}
+```
+说明：
+`transport`为传输方式，目前支持`streamable_http`。
+`url`为Mindoc的MCP服务地址，示例配置中Endpoint默认为`http://127.0.0.1:8181`，默认的API密钥为`demo-mcp-api-key`，可自行修改为对接时项目实际使用的Endpoint和API密钥。
+
 # 项目截图
 
 **创建项目**
@@ -257,6 +290,7 @@ docker run -p 8181:8181 --name mindoc -e DB_ADAPTER=mysql -e MYSQL_PORT_3306_TCP
     - [扩展菜单注册太过繁琐 #2493](https://github.com/wangeditor-team/wangEditor/issues/2493)
   - 工具： `https://babeljs.io/repl` + `@babel/plugin-transform-classes`
 - [Vue.js](https://github.com/vuejs/vue) 框架
+- [MCP-Go](https://github.com/mark3labs/mcp-go)
 
 
 # 主要功能

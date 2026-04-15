@@ -36,3 +36,4 @@ database/mindoc.db
 !/uploads/.gitkeep
 # Added by goreleaser init:
 dist/
+calibre-*.txz
